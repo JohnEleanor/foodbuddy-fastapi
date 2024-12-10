@@ -1,0 +1,5 @@
+env
+.env 
+images/*.jpg
+ngrok.exe
+best.pt
