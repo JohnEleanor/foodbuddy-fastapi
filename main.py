@@ -1,65 +1,45 @@
-# import shutil
-# import requests
+# * ============== Python ===================
 import time
 import os
 from dotenv import load_dotenv
 import uvicorn
-from ultralytics import YOLO # type: ignore
 
-
-
-
-
+# * ============== fastAPI ===================
 from fastapi import FastAPI, Request, HTTPException, Header, File, UploadFile
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+
+# * ============ Line SDK ==================
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging import ApiClient, Configuration, MessagingApi, MessagingApiBlob, ReplyMessageRequest, TextMessage, FlexMessage, Emoji
+from linebot.v3.messaging import ApiClient, Configuration, MessagingApi, MessagingApiBlob, ReplyMessageRequest, TextMessage, FlexMessage, Emoji, ImageMessage
 from linebot.v3.messaging.models.show_loading_animation_request import ShowLoadingAnimationRequest
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, ImageMessageContent
 
 
-# * ====================================
-# ? env setup
+# * =========== Setup Env ===================
+
 load_dotenv()
 get_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN')
 get_channel_secret = os.getenv('LINE_CHANNEL_SECRET')
 # * ====================================
 
-# Initalize FastAPI with doc 
+# * ============ Fast-API SETUP ===================
 app = FastAPI()
+app.mount("/images", StaticFiles(directory="images"), name="images")
 
-# * ====================================
+# * ============ Line Setup ===================
 configuration = Configuration(access_token=get_access_token)
 handler = WebhookHandler(channel_secret=get_channel_secret)
 # * ====================================
 
 
 # ? function ====================================
+from predict import predict_image
+# ? =============================================
 
 
-def predict_image(image_path: str):
-    print("Predicting image...")
-    result_to_client = ""
-    model = YOLO("best.pt")
-    result = model(image_path)
-    predicted_names = [model.names[int(box.cls)] for box in result[0].boxes]
-    
-    if (predicted_names == []):
-        return "ไม่พบอาหารในรูปภาพ"
-    elif (predicted_names == ["red_pork_withRice"]):
-        result_to_client = "ข้าวหมูเเดง"
-    elif (predicted_names == ["greencurry"]):
-        result_to_client = "ข้าวแกงเขียวหวาน"
-    elif (predicted_names == ["stir_fried_basil"]):
-        result_to_client = "ข้าวผัดกะเพรา"
-
-    return result_to_client
-
-# ? function ====================================
-
-
-#!  ==== API ====================================
+# !  ============= API =======================
 
 @app.post("/predict")
 def upload_image(image: UploadFile = File(...)):
@@ -93,12 +73,12 @@ async def callback(request: Request, x_line_signature: str = Header(None)):
 
     return 'OK'
 
-#!  ==== API ====================================
+#!  ============= API ======================
 
 
 
 
-# ? LINE ====================================
+# ? ============= LINE ==================
 @handler.add(MessageEvent, message=ImageMessageContent)
 def handle_image(event: ImageMessageContent):
     with ApiClient(configuration) as api_client:
@@ -140,19 +120,17 @@ def handle_image(event: ImageMessageContent):
                   
                     predict_result = predict_image(file_name)
                     
-                    
                     # ! =============================================
+                    print(file_name)
+                    # profile = line_bot_api.get_profile(user_id=event.source.user_id)
                     
-                    profile = line_bot_api.get_profile(user_id=event.source.user_id)
                     line_bot_api.reply_message(
                         reply_message_request=ReplyMessageRequest(
                             replyToken=event.reply_token,
                             messages=[
                                 
-                                # TextMessage(text=f"รูปภาพของ : {profile.display_name} ถูกอัพโหลดแล้ว!"),
-                                # TextMessage(text=f"รูปภาพ : {file_name}"),
-                                # TextMessage(text=f"ชื่อไฟล์ : {os.path.basename(file_name)}"),
                                 TextMessage(text=f"เมนูของคุณคือ : {predict_result}"),
+                                # ImageMessage(originalContentUrl=f"http://127.0.0.1:8000/images/{event.message.id}.jpg", previewImageUrl=f"http://127.0.0.1:8000/images/{event.message.id}.jpg"),
                                 
                             ]
                         )
@@ -193,6 +171,7 @@ def handle_message(event: MessageEvent):
                             ]
                         )
                     )
+                # elif 
                 else:
                     line_bot_api.reply_message(
                         reply_message_request=ReplyMessageRequest(
