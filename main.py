@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 # * ============ Line SDK ==================
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.messaging import ApiClient, Configuration, MessagingApi, MessagingApiBlob, ReplyMessageRequest, TextMessage, FlexMessage, Emoji, ImageMessage
+from linebot.v3.messaging import ApiClient, Configuration, MessagingApi, MessagingApiBlob, ReplyMessageRequest, TextMessage, Emoji, ImageMessage, FlexBubble, FlexMessage, FlexImage, FlexText, FlexBox, URIAction, FlexIcon , FlexButton, FlexSeparator
 from linebot.v3.messaging.models.show_loading_animation_request import ShowLoadingAnimationRequest
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, ImageMessageContent
 
@@ -121,16 +121,93 @@ def handle_image(event: ImageMessageContent):
                     predict_result = predict_image(file_name)
                     
                     # ! =============================================
-                    print(file_name)
+                    image_url = f"https://68b7-27-145-167-76.ngrok-free.app/images/{event.message.id}.jpg"
+                    bubble = FlexBubble(
+                        direction='ltr',
+                        hero=FlexImage(
+                            url=image_url,
+                            size='full',
+                            aspect_ratio='20:13',
+                            aspect_mode='cover',
+                            action=URIAction(uri=image_url, label='label')
+                        ),
+                        body=FlexBox(
+                            layout='vertical',
+                            contents=[
+                                # title
+                                FlexText(text=predict_result, weight='bold', size='xl'),
+                                # review
+                                FlexBox(
+                                    layout='baseline',
+                                    margin='md',
+                                    contents=[
+                                        FlexIcon(size='sm', url='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'),
+                                        FlexIcon(size='sm', url='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'),
+                                        FlexIcon(size='sm', url='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'),
+                                        FlexIcon(size='sm', url='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'),
+                                        FlexIcon(size='sm', url='https://cdn-icons-png.flaticon.com/512/1828/1828884.png'),
+                                        FlexText(text='5.0', size='sm', color='#999999', margin='md', flex=0)
+                                    ]
+                                ),
+                                # info
+                                FlexBox(
+                                    layout='vertical',
+                                    margin='lg',
+                                    spacing='sm',
+                                    contents=[
+                                        FlexBox(
+                                            layout='baseline',
+                                            spacing='sm',
+                                            contents=[
+                                                FlexText(
+                                                    text='สารอาหาร',
+                                                    color='#aaaaaa',
+                                                    size='sm',
+                                                    flex=2
+                                                ),
+                                                FlexText(
+                                                    text='ยังไม่ทราบ ยังไม่ทราบ ยังไม่ทราบ ยังไม่ทราบ ยังไม่ทราบ ยังไม่ทราบ\n ยังไม่ทราบยังไม่ทราบ',
+                                                    wrap=True,
+                                                    color='#666666',
+                                                    size='sm',
+                                                    flex=6
+                                                )
+                                            ],
+                                        )
+                                    ],
+                                )
+                            ],
+                        ),
+                        footer=FlexBox(
+                            layout='vertical',
+                            spacing='sm',
+                            contents=[
+                                # # callAction
+                                # FlexButton(
+                                #     style='link',
+                                #     height='sm',
+                                #     action=URIAction(label='CALL', uri='tel:000000'),
+                                # ),
+                                # # separator
+                                # FlexSeparator(),
+                                # # websiteAction
+                                FlexButton(
+                                    style='link',
+                                    height='sm',
+                                    action=URIAction(label='เเก้ไขเมนู', uri="https://example.com")
+                                )
+                            ]
+                        ),
+                    )
                     # profile = line_bot_api.get_profile(user_id=event.source.user_id)
                     
                     line_bot_api.reply_message(
                         reply_message_request=ReplyMessageRequest(
                             replyToken=event.reply_token,
                             messages=[
-                                
-                                TextMessage(text=f"เมนูของคุณคือ : {predict_result}"),
-                                # ImageMessage(originalContentUrl=f"http://127.0.0.1:8000/images/{event.message.id}.jpg", previewImageUrl=f"http://127.0.0.1:8000/images/{event.message.id}.jpg"),
+                                FlexMessage(altText="เมนูของคุณคือ", contents=bubble),
+                                # ImageMessage(originalContentUrl=image_url, previewImageUrl=image_url),
+                                # TextMessage(text=f"เมนูของคุณคือ : {predict_result}"),
                                 
                             ]
                         )
